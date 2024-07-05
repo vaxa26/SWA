@@ -1,0 +1,32 @@
+# Copyright (C) 2023 -  Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# kubectl apply -f busybox.yaml
+#   nslookup kunde.acme.svc.cluster.local
+#   nslookup postgres.acme.svc.cluster.local
+# kubectl delete -f busybox.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: acme
+  labels:
+    app.kubernetes.io/name: busybox
+spec:
+  containers:
+    - name: busybox
+      image: busybox:1.36.1
+      command: ['sh', '-c', 'echo The app is running! && sleep 3600']

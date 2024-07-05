@@ -1,0 +1,58 @@
+File > New... > Project
+    Name        z.B. gesangverein
+    Location    ~/IdeaProjects
+    NICHT       Add sample code
+    Advanced Settings > GroupId     com.acme
+
+Siehe https://www.jetbrains.com/help/idea/maven-support.html
+
+In IntelliJ:
+    ggf. .mvn\wrapper\maven-wrapper.properties
+    File > Settings
+        Inspections
+            Package Search        Haken entfernen
+        Build, Execution, Deployment
+            Build Tools
+                Maven
+                    Maven home path:    C:\Zimmermann\maven
+                    Importing
+                        Sources             Haken setzen
+                        Documentation       Haken setzen
+                        Annotations         Haken setzen
+            Compiler
+                Java Compiler
+                    Additional commandline parametes   --enable-preview
+
+Beispiel 0 kopieren
+    In settings.gradle.kts z.B. "gesangverein" statt "kunde" eintragen
+
+-----------------------------------------------------------------------
+In einer Powershell für das eigene Projekt gesangverein
+    cd \users\...\IdeaProjects\gesangverein
+    mkdir src\main\kotlin\com\acme\gesangverein\config
+    mkdir src\main\kotlin\com\acme\gesangverein\entity
+    mkdir src\main\kotlin\com\acme\gesangverein\graphql
+    mkdir src\main\kotlin\com\acme\gesangverein\rest
+    mkdir src\main\kotlin\com\acme\gesangverein\service
+
+-----------------------------------------------------------------------
+Aus Beispiel 1 kopieren
+    Application.java ohne @EnableHypermediaSupport
+    Verzeichnis config mit allen Dateien und Unterverzeichnissen kopieren
+    Verzeichnis src\main\resources kopieren *OHNE* das Unterverzeichnis graphql
+    build.gradle.kts editieren
+        Zeile auskommentieren mit "spring-boot-starter-graphql"
+
+-----------------------------------------------------------------------
+In einer Powershell
+    gradle bootRun
+
+///////////////////////////////////////////////////////////////////////
+OPTIONAL: Icon "Project Structure" (rechte obere Ecke)
+    Facets
+        +
+            Spring
+                gesangverein_main
+                + (rechtes Teilfenster mit "Application")
+                    Parent context:   Application
+                    gesangverein_main:      Haken setzen

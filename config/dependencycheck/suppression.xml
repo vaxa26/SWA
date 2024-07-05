@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<!--
+ Copyright (C) 2016 - present Juergen Zimmermann, Hochschule Karlsruhe
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
+<!-- https://github.com/jeremylong/DependencyCheck/tree/main/core/src/main/resources/schema -->
+
+<!--suppress XmlUnusedNamespaceDeclaration -->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.2.5 https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd ">
+    <suppress>
+        <notes><![CDATA[file name: h2-2.2.220.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
+        <vulnerabilityName>CVE-2018-14335</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: micrometer-tracing-bridge-brave-1.3.0-M1.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer\-tracing\-bridge\-brave@.*$</packageUrl>
+        <cpe>cpe:/a:brave:brave</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: brave-propagation-tracecontext-0.2.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.zipkin\.contrib\.brave\-propagation\-w3c/brave\-propagation\-tracecontext@.*$</packageUrl>
+        <cpe>cpe:/a:brave:brave</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: prometheus-metrics-config-1.1.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus\-metrics\-config@.*$</packageUrl>
+        <cve>CVE-2019-3826</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: prometheus-metrics-core-1.1.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus\-metrics\-core@.*$</packageUrl>
+        <cve>CVE-2019-3826</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: prometheus-metrics-exposition-formats-1.1.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus\-metrics\-exposition\-formats@.*$</packageUrl>
+        <cve>CVE-2019-3826</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: prometheus-metrics-model-1.1.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus\-metrics\-model@.*$</packageUrl>
+        <cve>CVE-2019-3826</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[file name: prometheus-metrics-shaded-protobuf-1.1.0.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus\-metrics\-shaded\-protobuf@.*$</packageUrl>
+        <cve>CVE-2019-3826</cve>
+    </suppress>
+</suppressions>

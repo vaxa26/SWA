@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS AUTHORIZATION sonar;
+ALTER ROLE sonar SET search_path = 'sonar';

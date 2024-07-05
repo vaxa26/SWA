@@ -1,0 +1,8 @@
+.allure
+.idea
+build
+extras
+target
+src/main/resources/private-key.pem
+src/main/resources/certificate.cer
+src/test

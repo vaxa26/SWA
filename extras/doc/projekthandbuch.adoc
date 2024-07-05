@@ -1,0 +1,109 @@
+= ProjektHandbuch
+Viet ANh Vu
+:doctype: book
+:toc: left
+:sectanchors:
+:sectlinks:
+:sectnums:
+:pagenums:
+:source-highlighter: rouge
+:icons: font
+
+== Microservice Player
+=== Microservice Overview
+
+Architektur als C4 Modell für die Microservices
+[plantuml,c4,svg]
+----
+include::./c4.puml[]
+----
+
+=== Rest Schnittstellen
+
+"PlayerGetController" für Lesezugriffe an Rest-Schnittstelle
+[plantuml,PlayerGetController,svg]
+
+----
+include::./PlayerGetController.puml[]
+----
+
+"PlayerWriteController" für Schreibzugriff an Rest-Schnittstelle
+[plantuml, PlayerWriteController, svg]
+
+----
+include::./PlayerWriteController.puml[]
+----
+
+=== Service/Logic
+
+"PlayerReadService" Methoden zum Lesen
+[plantuml, PlayerReadService,svg]
+
+----
+include::./PlayerWriteService.puml[]
+----
+
+"PlayerWriteService" Methoden zum Schreiben
+[plantuml, PlayerWriteService,svg]
+
+----
+include::./PlayerWriteService.puml[]
+----
+
+=== Entities
+
+"Entitiy-Player" und ihre Daten
+[plantuml, Player,svg]
+
+----
+include::./Player.puml[]
+----
+
+=== ER-Diagramm
+
+"Entity-Relation Diagram"
+[plantuml, erdia,svg]
+----
+include::./erdia.puml[]
+----
+
+== Programmierrichtlinien
+
+TIP: Als Studierende/r sollte man sich frühzeitig an Programmierrichtlinien
+gewöhnen. Das hinterlässt im späteren Praxissemester einen professionellen Eindruck.
+
+=== Java
+
+[horizontal]
+_Oracle_:: https://www.oracle.com/java/technologies/javase/codeconventions-namingconventions.html
+_Google_:: https://google.github.io/styleguide/javaguide.html
+_Microsoft Azure_:: https://azure.github.io/azure-sdk/java_introduction.html
+_Mozilla_:: https://firefox-source-docs.mozilla.org/code-quality/coding-style/coding_style_java.html
+
+=== SQL
+
+[horizontal]
+_SQL_:: https://www.sqlstyle.guide
+
+=== TypeScript und JavaScript
+
+[horizontal]
+_E-Book für TypeScript_:: https://github.com/gibbok/typescript-book
+_Google_:: https://google.github.io/styleguide/tsguide.html
+_Airbnb_:: https://github.com/airbnb/javascript
+_Shopify_:: https://github.com/Shopify/javascript
+_React bei Airbnb_:: https://github.com/airbnb/javascript/tree/master/react
+_Angular_:: https://angular.io/guide/style-guide.html
+_Microsoft_:: https://github.com/Microsoft/TypeScript/wiki/Coding-guidelines
+
+=== Python
+
+[horizontal]
+_Google_:: https://google.github.io/styleguide/pyguide.html
+_The Zen of Python_:: https://peps.python.org/pep-0020
+
+=== Kotlin
+
+[horizontal]
+_Kotlin_:: https://kotlinlang.org/docs/coding-conventions.html
+_Android_:: https://developer.android.com/kotlin/style-guide

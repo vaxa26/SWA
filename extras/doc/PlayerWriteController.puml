@@ -1,0 +1,104 @@
+@startuml PlayerWriteController
+
+skinparam classAttributeIconSize 0
+
+package org.springframework {
+  package sterotype {
+    interface "@"Controller" as Controller
+  }
+
+  package security.core {
+    class Authentication
+    }
+
+    package web.bind.annotation {
+        interface "@RequestMapping" as RequestMapping
+        interface "@PathVariable" as PathVariable
+        interface "@RequestBody" as RequestBody
+        interface "@ExceptionHandler" as ExceptionHandler
+    }
+
+    package http {
+        class ResponseEntity<T>
+        class ProblemDetail
+
+        package converter {
+            class HttpMessageNotReadableException
+        }
+
+        ResponseEntity .[hidden].> ProblemDetail
+        ProblemDetail .[hidden].> HttpMessageNotReadableException
+    }
+}
+
+package jakarta.servlet.http {
+    class HttpServletRequest
+}
+
+package java.util {
+    interface Collection<T>
+    class UUID
+    class Optional<T>
+
+    UUID .up[hidden].> Collection
+    Collection .up[hidden].> HttpServletRequest
+}
+
+package com.acme.axa{
+    package service {
+      class PlayerWriteService <<control>> << @Service >>
+      class EmailExistException
+      class PlayernameExistsException
+      class onConstrainViolation
+      class VersionOutdatedException
+    }
+
+    package security {
+      class PasswordInvalidException
+      class UsernameExistException
+      }
+
+    package rest #DDDDDD {
+    class PlayerDTO <<entity>>
+
+    class PlayerWriteController << boundary >> << @Controller >> << @RequestMapping >> {
+    + @PostMapping post(@RequestBody PlayerDTO: PlayerDTO, request: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @PutMapping put(@PathVariable id: UUID, @RequestBody PlayerDTO: PlayerDTO, @RequestHeader("If-Match") version: Optional<String>, request: HttpServletRequest): ResponseEntity<Void>
+    + @ExceptionHandler onConstraintViolations(ex: ConstraintViolationsException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @ExceptionHandler onEmailExists(ex: EmailExistsException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @ExceptionHandler onVersionOutdated(ex: VersionOutdatedException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @ExceptionHandler onUsernameExists(ex: UsernameExistsException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @ExceptionHandler onPasswordInvalid(ex: PasswordInvalidException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    + @ExceptionHandler onMessageNotReadable(ex: HttpMessageNotReadableException, req: HttpServletRequest): ResponseEntity<ProblemDetail>
+    }
+}
+        PlayerWriteController o-down-> "1" PlayerWriteService : service
+        PlayerWriteController ..> PlayerDTO
+        PlayerWriteController ..> UUID
+        PlayerWriteController ..> Optional
+        PlayerWriteController ..> Collection
+        PlayerWriteController ..> PlayernameExistsException
+        PlayerWriteController ..> VersionOutdatedException
+        PlayerWriteController ..> PasswordInvalidException
+        PlayerWriteController .up> HttpMessageNotReadableException
+        PlayerWriteController ..> VersionInvalidException
+        PlayerWriteController ..> onConstrainViolation
+        PlayerWriteController ..> EmailExistException
+        PlayerWriteController ..> UsernameExistException
+
+        PlayerWriteController .up.> ResponseEntity
+        PlayerWriteController .up.> ProblemDetail
+        PlayerWriteController .up.> HttpMessageNotReadableException
+        PlayerWriteController .down.> HttpServletRequest
+
+        PlayerWriteController .up.> Controller
+        PlayerWriteController .up.> RequestMapping
+        PlayerWriteController .up.> PathVariable
+        PlayerWriteController .up.> RequestBody
+        PlayerWriteController .up.> ExceptionHandler
+
+        PlayerWriteController .left.> UUID
+        PlayerWriteController .left.> Collection
+
+
+@enduml

@@ -1,0 +1,42 @@
+@startuml C4
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+' https://github.com/tupadr3/plantuml-icon-font-sprites/tree/master/devicons
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+' https://github.com/tupadr3/plantuml-icon-font-sprites/tree/master/devicons2
+!define DEVICONS2 https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons2
+' https://github.com/tupadr3/plantuml-icon-font-sprites/tree/master/font-awesome-5
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+
+!include FONTAWESOME/users.puml
+!include DEVICONS2/spring.puml
+!include DEVICONS/postgresql.puml
+
+Person(user, "user", "Student", $sprite="users")
+Person(Dozent, "user", "Dozent", $sprite="users")
+
+Container(client, "Client", "Postman", $sprite="Postman")
+
+Container(Auth0, "Auth0", "Keycoak")
+Container(kv, "Student", "Spring", "Studenverwaltung", $sprite="spring")
+Container(bv, "Player", "Spring", "Playerverwaltung", $sprite="spring")
+
+ContainerDb(postgres, "Datenbank", "PostgreSQL", "StudentDaten \nSpielerDaten", $sprite="postgresql")
+
+Rel(user, client, "Auth grant")
+Rel(Dozent , client, "Auth grant")
+Rel(client, user, "Auth Req")
+Rel(client, Dozent, "Auth Req")
+
+Rel(client, kv, "http")
+Rel(client, bv, "http")
+
+Rel(client, Auth0, "Auth grant")
+Rel(Auth0, client, "AccesToken")
+
+
+Rel(kv, postgres, "Read/Write")
+Rel(bv, postgres, "Read/Write")
+
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+package org.springframework {
+  package stereotype {
+    interface Service
+    }
+        package transaction.annotation {
+            interface Transactional
+        }
+
+        package security.core.userdetails {
+            interface UserDetails
+        }
+}
+
+package java.util {
+    interface List<N>
+    interface Map<K,V>
+    class UUID
+}
+
+package com.acme.axa {
+    package entity {
+        class Player << entity >>
+    }
+
+    package repository {
+        Interface PlayerRepository << control >> << @Repository >>
+    }
+
+    package service {
+        class PlayerReadService << control >> << @Service >> {
+            + findById(id: UUID, user: UserDetails): Player
+            + find(queryParams: Map<String, String>: List<Player>
+        }
+
+        PlayerReadService o--> PlayerRepository : repo
+        PlayerReadService .left.> Player
+        PlayerReadService ..>Service
+        PlayerReadService .up.> UUID
+        PlayerReadService .up.> List
+        PlayerReadService .up.> Map
+
+        PlayerReadService ..>Transactional
+        PlayerReadService ..> UserDetails
+    }
+}
+
+@enduml

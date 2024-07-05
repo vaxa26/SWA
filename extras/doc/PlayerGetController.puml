@@ -1,0 +1,87 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+package org.springframework {
+    package web.bind.annotation {
+        interface "@RestController" as RestController
+        interface "@RequestMapping" as RequestMapping
+        interface "@PathVariable" as PathVariable
+        interface "@RequestParam" as RequestParam
+        interface "@ExceptionHandler" as ExceptionHandler
+        interface "@ResponseStatus" as ResponseStatus
+    }
+
+    package security.core {
+        class Authentication
+    }
+
+    package http {
+        class ResponseEntity<T>
+    }
+    package hateoas {
+        class CollectionModel<E>
+    }
+    package util {
+        class MultiValueMap<K,V>
+    }
+}
+
+package com.acme.player {
+  package entity {
+  class Player <<entity>>
+  }
+}
+
+package java.util {
+    class UUID
+}
+package jakarta.servlet.http {
+    interface HttpServletRequest
+}
+package com.acme.axa {
+
+    package rest #DDDDDD {
+      class PlayerGetController << boundary >> << "@RestController" >> << "@RequestMapping" >> {
+      + @GetMapping getPlayerById(@PathVariable id: UUI, @RequestHeader ("IF-NONE-MATCH") version:String , request HttpServletRequest, authentication: Authentication): ResponseEntity<PlayerModel
+      + @GetMapping getPlayer(@RequestParam queryParams: MultiValueMap<String, String>, request: HttpServletRequest): CollectionModel<PlayerModel>
+      }
+      class PlayerModel << entity >>
+      class CommonExceptionHandler {
+      + @ExceptionHandler @ResponseStatus onNotFound(ex: NotFoundException)
+      + @ExceptionHandler @ResponseStatus onAccessForbidden(ex
+      }
+    }
+
+    package service {
+    class PlayerReadService <<controll>> <<@Service>>
+    class NotFoundException
+    class AccessForbiddenException
+    }
+
+ PlayerGetController .right.> UUID
+ PlayerGetController .right.>HttpServletRequest
+
+ PlayerGetController .up.> RestController
+ PlayerGetController .up.> RequestMapping
+ PlayerGetController .up.> RequestParam
+ PlayerGetController .up.> PathVariable
+ PlayerGetController .up.> ResponseEntity
+ PlayerGetController .up.> CollectionModel
+ PlayerGetController .up.> MultiValueMap
+ PlayerGetController .right> Player
+ PlayerGetController o--> "1"PlayerReadService : service
+
+ PlayerGetController .down.> PlayerModel
+
+ CommonExceptionHandler .up.> ExceptionHandler
+ CommonExceptionHandler .up.> ResponseStatus
+ CommonExceptionHandler .down.> NotFoundException
+ CommonExceptionHandler .right> AccessForbiddenException
+ PlayerModel .right> Player
+
+ hide empty members
+}
+
+
+@enduml

@@ -1,0 +1,99 @@
+@startuml Player
+
+skinparam classAttributeIconSize 0
+
+
+package java {
+    package util {
+        class UUID
+        interface List<T>
+        class URL
+    }
+    package time {
+        class LocalDate
+        class LocalDateTime
+}
+
+package jakarta.persistence {
+    interface "@Entity" as Entity
+    interface "@Table" as Table
+    }
+
+package com.acme.axa.entity #DDDDDD {
+    class Stats{
+      @Id
+      id: uuid
+      wins: int
+      loss: int
+      winrate: double
+      lossrate: double
+      hotstreak: boolean
+      losesstreak: boolean
+      }
+
+    class Balances {
+     @Id
+     id: UUID
+     credits: int
+     points: int
+    }
+
+    enum RankedType{
+      UNRANKED
+      BRONZE
+      SILVER
+      GOLD
+      PLATINUM
+      EMERALD
+      DIAMOND
+      MASTER
+      GRANDMASTER
+      CHALLENGER
+    }
+
+    enum SkinType{
+      Common
+      Rare
+      Epic
+      Legendary
+    }
+
+    class Player << entity >>{
+      @Id
+      @GeneratedValue
+      id: UUID
+      @Version
+      version : int
+      playername: String
+      @Email
+      email: email
+      @Enumrated
+      rank: RankedType
+      @Transient
+      Skins: List<SkinType>
+      username: String
+      @CreationTimestamp
+      erzeugt: LocalDateTime
+      @UpdateTimestamp
+      aktualisiert: LocalDateTime
+  }
+
+  Player .up> RankedType
+  Player .up> SkinType
+  Player *--> "1..n" Stats : @One To One(cascade = [...]) \nstats
+  Player *--> "n..n" Balances : @One To Many(cascade = [...])\nbalances
+
+  Player .left> UUID
+  Player .left>List
+  Player .left> URL
+  Player .left> LocalDate
+  Player .left> LocalDateTime
+
+  Balances .right> UUID
+  Stats .right> UUID
+
+  Player .left> Table
+  Player .left> Entity
+}
+
+@enduml

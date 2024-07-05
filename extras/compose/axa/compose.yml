@@ -1,0 +1,75 @@
+# Copyright (C) 2021 - present Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Aufruf:   docker compose [-f compose.yml -f compose.eclipse.yml|compose.azul.yml|compose.buildpacks-eclipse.yml|compose.buildpacks-eclipse.yml] up
+#           docker compose exec axa bash
+#             id
+#             ps -ef
+#             env
+#             ls -l /layers
+#             ls -l
+#             pwd
+#             hostname
+#             cat /etc/os-release
+#           docker compose down
+
+# https://docs.docker.com/compose/compose-file
+# https://docs.docker.com/compose/compose-file/compose-file-v3
+# https://github.com/compose-spec/compose-spec/blob/master/schema/compose-spec.json
+
+# https://docs.docker.com/compose/compose-file/05-services
+services:
+  axa:
+    image: juergenzimmermann/axa:2024.04.0-buildpacks-azul
+    ports:
+      #- published: 8080-8085
+      - published: 8080
+        target: 8080
+    volumes:
+      - type: bind
+        source: ..\..\..\src\main\resources\application.yml
+        target: /workspace/BOOT-INF/classes/application.yml
+        read_only: true
+      - type: bind
+        source: ..\..\..\src\main\resources\private-key.pem
+        target: /workspace/BOOT-INF/classes/private-key.pem
+        read_only: true
+      - type: bind
+        source: ..\..\..\src\main\resources\certificate.crt
+        target: /workspace/BOOT-INF/classes/certificate.crt
+        read_only: true
+      - type: bind
+        source: C:\Zimmermann\volumes\axa
+        target: /tmp
+    env_file: .env
+    # CAVEAT: bei Replikation keine doppelten Rechnernamen im virtuellen Netzwerk !!!
+    hostname: axa
+    # https://docs.docker.com/compose/compose-file/compose-file-v3/#cap_add-cap_drop
+    cap_drop: [ ALL ]
+    stop_grace_period: 10s
+    # https://docs.docker.com/compose/compose-file/deploy
+    deploy:
+      # https://docs.docker.com/compose/compose-file/deploy/#resources
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.25"
+          memory: 512M
+      # https://docs.docker.com/compose/compose-file/deploy/#replicas
+      #mode: replicated
+      #replicas: 2
+      #endpoint_mode: vip

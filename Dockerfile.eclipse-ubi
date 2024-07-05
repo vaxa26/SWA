@@ -1,0 +1,154 @@
+# syntax=docker/dockerfile:1.7.0
+
+# Copyright (C) 2023 - present Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Aufruf:   docker build --tag juergenzimmermann/kunde:2024.04.0-eclipse-ubi -f Dockerfile.eclipse-ubi .
+#           Get-Content Dockerfile.eclipse-ubi | docker run --rm --interactive hadolint/hadolint:2.12.1-beta-debian
+
+# https://docs.docker.com/engine/reference/builder/#syntax
+# https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md
+# https://hub.docker.com/r/docker/dockerfile
+# https://docs.docker.com/build/building/multi-stage
+# https://containers.gitbook.io/build-containers-the-hard-way
+
+#ARG JAVA_VERSION=22_36
+ARG JAVA_VERSION=21.0.2_13
+
+# ---------------------------------------------------------------------------------------
+# S t a g e :   b u i l d e r
+#
+#   UBI = Red Hat Universal Base Image
+#   https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/building_running_and_managing_containers/index#con_understanding-the-ubi-standard-images_assembly_types-of-container-images
+#   https://developers.redhat.com/articles/ubi-faq
+#   https://access.redhat.com/articles/4238681
+#   Bei https://catalog.redhat.com gibt es auch Images fuer UBI, falls man ein Abonnement hat
+#   JAR bauen mit eigenem Code und Dependencies, z.B. Spring, Jackson
+# ---------------------------------------------------------------------------------------
+FROM eclipse-temurin:${JAVA_VERSION}-jdk-ubi9-minimal AS builder
+
+# "working directory" fuer die Docker-Kommandos RUN, ENTRYPOINT, CMD, COPY und ADD
+WORKDIR /source
+
+# Package Manager
+#   rpm = Red Hat Package Manager
+#   YUM = Yellow-Dog Updater Modified
+#   DNF = Dandified YUM
+#     "default software package management tool" in Fedora und der Nachfolger von YUM
+#     https://dnf.readthedocs.io/en/latest/command_ref.html
+#     https://docs.fedoraproject.org/en-US/quick-docs/dnf
+#     https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-37&arch=x86_64
+#   microdnf nutzt C statt Python und benötigt deshalb keine Python-Module
+#     https://github.com/rpm-software-management/microdnf
+#     microdnf list installed
+# ggf.:
+#   dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+#   dnf -y install codeready-builder-release
+#   /usr/bin/crb enable
+#   dnf -y install ...
+
+# JAR-Datei mit den Schichten ("layers") erstellen und aufbereiten bzw. entpacken
+# "here document" wie in einem Shellscipt
+RUN <<EOF
+# https://medium.com/vantageai/how-to-make-your-python-docker-images-secure-fast-small-b3a6870373a0
+set -eux
+# "findutils" enthaelt "xargs" fuer das Shellskript "gradlew"
+# https://rpmfind.net/linux/RPM/index.html
+# https://rpmfind.net/linux/rpm2html/search.php?query=findutils
+# microdnf install -y dnf-plugins-core
+#   microdnf repoquery --info findutils
+microdnf -y install --nodocs findutils-4.8.0-6.el9
+microdnf clean all
+EOF
+
+# ADD hat mehr Funktionalitaet als COPY, z.B. auch Download von externen Dateien
+
+# Gradle:
+COPY build.gradle.kts gradle.properties gradlew settings.gradle.kts ./
+COPY gradle ./gradle
+
+# Maven:
+#COPY pom.xml mvnw ./
+#COPY .mvn ./.mvn
+
+COPY src ./src
+
+RUN <<EOF
+# https://medium.com/vantageai/how-to-make-your-python-docker-images-secure-fast-small-b3a6870373a0
+set -eux
+
+# Gradle:
+./gradlew --no-configuration-cache --no-daemon --no-watch-fs bootJar
+java -Djarmode=layertools -jar ./build/libs/kunde-2024.04.0.jar extract
+
+# Maven:
+#./mvnw package spring-boot:repackage -Dmaven.test.skip=true -Dspring-boot.build-image.skip=true
+#java -Djarmode=layertools -jar ./target/kunde-2024.04.0.jar extract
+EOF
+
+# ---------------------------------------------------------------------------------------
+# S t a g e   f i n a l
+#
+#   JRE statt JDK
+#   Dependencies, z.B. Spring, Jackson
+#   Loader fuer Spring Boot
+#   Eigener uebersetzter Code
+# ---------------------------------------------------------------------------------------
+FROM eclipse-temurin:${JAVA_VERSION}-jre-ubi9-minimal AS final
+
+# Anzeige bei "docker inspect ..."
+# https://specs.opencontainers.org/image-spec/annotations
+# https://spdx.org/licenses
+# https://snyk.io/de/blog/how-and-when-to-use-docker-labels-oci-container-annotations
+# MAINTAINER ist deprecated https://docs.docker.com/engine/reference/builder/#maintainer-deprecated
+LABEL org.opencontainers.image.title="kunde" \
+      org.opencontainers.image.description="Microservice kunde v0 mit Basis-Image Eclipse Temurin und UBI" \
+      org.opencontainers.image.version="2024.04.0-eclipse-ubi" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later" \
+      org.opencontainers.image.vendor="Juergen Zimmermann" \
+      org.opencontainers.image.authors="Juergen.Zimmermann@h-ka.de" \
+      org.opencontainers.image.base.name="eclipse-temurin:LATEST_VERSION-jre-ubi9-minimal"
+
+# gleiches Basis-Verzeichnis wie bei "Cloud Native Buildpacks": Mounting von application.yml, private-key.pem, certificate.crt
+WORKDIR /workspace
+
+# "here document" wie in einem Shellscipt
+RUN <<EOF
+set -eux
+microdnf update -y
+# groupadd und useradd: https://stackoverflow.com/questions/72660240/moving-over-to-red-hat-ubi-minimal
+microdnf install -y shadow-utils
+microdnf clean all
+rm -rf /var/cache/yum/*
+# https://manpages.debian.org/bookworm/passwd/groupadd.html
+# https://manpages.debian.org/bookworm/adduser/addgroup.html
+groupadd --gid 1000 app
+# https://manpages.debian.org/bookworm/passwd/useradd.html
+# https://manpages.debian.org/bookworm/adduser/adduser.html
+useradd --uid 1000 --gid app --no-create-home app
+chown -R app:app /workspace
+EOF
+
+# ADD hat mehr Funktionalitaet als COPY, z.B. auch Download von externen Dateien
+# ggf. auch /source/snapshot-dependencies/
+COPY --from=builder --chown=app:app /source/dependencies/ /source/spring-boot-loader/ /source/application/ ./
+
+USER app
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=1 CMD wget -qO- --no-check-certificate https://localhost:8080/actuator/health/ | grep UP || exit 1
+
+# Bei CMD statt ENTRYPOINT kann das Kommando bei "docker run ..." ueberschrieben werden
+ENTRYPOINT ["java", "--enable-preview", "org.springframework.boot.loader.launch.JarLauncher"]

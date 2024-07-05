@@ -1,0 +1,350 @@
+# Copyright (C) 2020 - present Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Aufruf:   kubectl.exe apply -f .\kubernetes.service-account.yaml --namespace acme
+#           kubectl apply -f kubernetes.yaml --namespace acme
+#           kubectl port-forward service/axa 8080 --namespace acme
+#
+#           $secpasswd = ConvertTo-SecureString p -AsPlainText -Force
+#           $credential = New-Object System.Management.Automation.PSCredential('admin', $secpasswd)
+#           Invoke-WebRequest http://localhost:8080/api/00000000-0000-0000-0000-000000000001 `
+#            -Authentication Basic -Credential $credential -AllowUnencryptedAuthentication -Headers @{Accept = 'application/hal+json'}
+#           Invoke-RestMethod http://localhost:8080/api/00000000-0000-0000-0000-000000000001 `
+#            -Authentication Basic -Credential $credential -AllowUnencryptedAuthentication -Headers @{Accept = 'application/hal+json'}
+
+# Ein Pod hat als Schablone ein Deployment (siehe "kind") und beinhaltet mind. 1 Image einschl. Replikationen
+# Ein Pod ist die Verwaltungseinheit fuer Container
+
+#   kubectl api-versions
+#   kubectl create deployment axa --image=juergenzimmermann/axa:1.0.0 --dry-run=client --output=yaml > deployment.yaml
+#   kubectl create service clusterip axa --tcp=8080:8080 --dry-run=client --output=yaml > service.yaml
+
+# Kommandozeile statt Lens https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+#   kubectl get deployments --namespace acme
+#   kubectl describe deployment axaa --namespace acme
+#   kubectl get pods --namespace acme
+#   kubectl get pods --selector app=axa --namespace acme
+#   kubectl get pod axa-?????????-????? --output wide --namespace acme
+#   kubectl get pod axa-?????????-????? --output yaml --namespace acme
+#   kubectl describe pod axa-?????????-????? --namespace acme
+#   kubectl exec axa-?????????-????? --namespace acme -- printenv AXA_SERVICE_HOST
+#   kubectl exec axa-?????????-????? --namespace acme -- printenv AXA_SERVICE_PORT
+#   kubectl exec axa-?????????-????? --namespace acme -- printenv | sort
+#   kubectl exec axa-?????????-????? --stdin --tty --namespace acme  -- bash
+#   kubectl get service axa --namespace acme
+#   kubectl describe service axa --namespace acme
+#   kubectl logs axa-?????????-????? --namespace acme
+#   kubectl get replicaset --namespace acme
+
+# IP-Adresse des Pod ermitteln:
+#   $podName = kubectl get pods --selector app=axa --namespace acme | wsl --exec awk '/^axa-/ {print $1}'
+#   $ip = kubectl describe pod $podName --namespace acme | wsl --exec awk '/^IP:/ {print $2}'
+
+---
+# https://kubernetes.io/docs/concepts/configuration/configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: axa
+  namespace: acme
+data:
+  # Key-Value-Paare (hier: fuer die Umgebungsvariable)
+  TZ: Europe/Berlin
+  SPRING_PROFILES_ACTIVE: dev
+  SPRING_OUTPUT_ANSI_ENABLED: NEVER
+  APPLICATION_LOGLEVEL: trace
+  SERVER_SSL_ENABLED: "false"
+  SERVER_HTTP2_ENABLED: "false"
+  SERVER_TOMCAT_BASEDIR: /tmp
+
+---
+# https://kubernetes.io/docs/concepts/services-networking/network-policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: axa
+  namespace: acme
+spec:
+  # Spezifikation, auf welche Pods die NetworkPolicy angewendet wird
+  podSelector:
+    matchLabels:
+      app: axa
+      app.kubernetes.io/name: axa
+      app.kubernetes.io/instance: axa
+  policyTypes: [Ingress, Egress]
+
+---
+# https://kubernetes.io/docs/concepts/services-networking/connect-applications-service
+# https://kubernetes.io/docs/concepts/services-networking/service
+apiVersion: v1
+kind: Service
+metadata:
+  name: axa
+  labels:
+    app: axa
+    app.kubernetes.io/name: axa
+    app.kubernetes.io/instance: axa
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/part-of: acme
+spec:
+  # Selektion der Pods fuer eingehende Requests
+  selector:
+    app: axa
+    app.kubernetes.io/name: axa
+    app.kubernetes.io/instance: axa
+  ports:
+    - port: 8080
+      name: http-service
+      targetPort: http
+      # https://kubernetes.io/docs/concepts/services-networking/service/#protocol-support
+      #protocol: TCP
+      # https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+      # default-Bereich: 30000 - 32767
+      #nodePort: 30080
+  # https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  #type: ClusterIP
+  #type: NodePort
+
+---
+# https://kubernetes.io/docs/concepts/services-networking/ingress/
+# https://github.com/kubernetes/ingress-nginx
+# https://kubernetes.io/docs/concepts/services-networking/ingress-controllers
+# https://github.com/kubernetes/ingress-nginx/blob/main/README.md#changelog Versionen von nginx
+# https://kubernetes.github.io/ingress-nginx/examples/rewrite
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-ingress
+  namespace: acme
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    # kubernetes.docker.internal entspricht localhost. Siehe C:\Windows\System32\drivers\etc\hosts
+    - host: kubernetes.docker.internal
+      http:
+        paths:
+          # https://kubernetes.github.io/ingress-nginx/user-guide/ingress-path-matching
+          # https://kubernetes.io/docs/concepts/services-networking/ingress
+          # (.*) wird abgebildet auf $2 (d.h. 2. Pfad-Segment s.o.), z.B.
+          #   kubernetes.docker.internal/kunden wird zu kubernetes.docker.internal:8080/rest
+          #   kubernetes.docker.internal/kunden/123 wird zu kubernetes.docker.internal:8080/rest/123
+          # https://github.com/kubernetes/ingress-nginx/issues/10200#issuecomment-1673141202
+          - path: /kunden(/|$)(.*)
+            #pathType: Prefix
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: axa
+                port:
+                  name: http-svc
+                  #number: 8080
+  tls:
+    - hosts: [kubernetes.docker.internal]
+      secretName: acme-tls
+
+---
+# https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#deployment-v1-apps
+apiVersion: apps/v1
+kind: Deployment
+# Beschreibung des Deplyoments ("Metadaten")
+metadata:
+  name: axa
+  # Kennzeichen bzw. Markierung
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+  labels:
+    app: axa
+    app.kubernetes.io/name: axa
+    app.kubernetes.io/instance: axa
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/part-of: acme
+  namespace: acme
+spec:
+  # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#selector
+  selector:
+    # Labels, mit denen z.B. ein Service einen Pod (zu diesem Deployment) identifizieren kann
+    # z.B. fuer:   kubectl delete deployment --selector app=axa --namespace acme
+    # i.a. gleicher Wert wie in template.metadata.labels
+    matchLabels:
+      app: axa
+      app.kubernetes.io/name: axa
+      app.kubernetes.io/instance: axa
+  # Anzahl laufender Pods fuer das Template zu diesem Deployment (s.u.)
+  replicas: 1
+  # https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates
+  # Template (Schablone, Beschreibung) fuer die zu startenden Pods
+  template:
+    metadata:
+      # Labels fuer einen Pod (NICHT fuer dieses Deployment), der durch dieses Deployment installiert wurde
+      labels:
+        app: axa
+        app.kubernetes.io/name: axa
+        app.kubernetes.io/instance: axa
+        app.kubernetes.io/version: 1.0.0
+        app.kubernetes.io/managed-by: kubectl
+        app.kubernetes.io/component: microservice
+        app.kubernetes.io/part-of: acme
+    # Spezifikation fuer jedem Pod
+    spec:
+      containers:
+        # https://kubernetes.io/docs/concepts/containers/images
+        #- image: juergenzimmermann/axa@sha256:...
+        - image: juergenzimmermann/axa:2024.04.0-buildpacks
+          # default
+          imagePullPolicy: IfNotPresent
+          name: axa
+          # https://kubernetes.io/docs/tasks/inject-data-application/define-interdependent-environment-variables
+          # https://opensource.com/article/19/6/introduction-kubernetes-secrets-and-configmaps
+          envFrom:
+            # https://kubernetes.io/docs/concepts/configuration/configmap
+            - configMapRef:
+                name: axa
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            # eingebauten User aus dem Basis-Image nutzen: cnb bei "Cloud Native Buildpacks" (oder nonroot bei Distroless)
+            # wird auch zum Owner von erstellten Verzeichnissen und Dateien
+            # sollte >10000 sein
+            runAsUser: 1000
+            #runAsUser: 65532
+            runAsGroup: 1000
+            #runAsGroup: 65532
+            runAsNonRoot: true
+            privileged: false
+            allowPrivilegeEscalation: false
+            # Logdatei in einem Verzeichnis durch Mounting; Zertifikate werden durch Paketo installiert
+            #readOnlyRootFilesystem: true
+            # https://kubernetes.io/docs/tutorials/security/seccomp
+            seccompProfile:
+              # 44 system calls sind deaktiviert
+              type: RuntimeDefault
+            seLinuxOptions: {}
+            # https://snyk.io/blog/10-kubernetes-security-context-settings-you-should-understand
+            capabilities:
+              # keine Linux kernel capabilities
+              drop: [all]
+          resources:
+            # https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-resource-requests-and-limits
+            # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+            # Mindestanforderung an Ressourcen
+            requests:
+              # CPU-Ressourcen werden in "millicores" definiert, z.B. "500m" oder "1"
+              # Beachte: Bei Hyper-Threading koennen in 1 CPU-Kern 2 verschiedene Threads bearbeitet werden
+              #          d.h. das Betriebssystem sieht scheinbar 2x so viele Kerne wie tatsaechlich vorhanden sind
+              cpu: 500m
+              #cpu: 200m
+              # Memory-Resources werden i.a. als "mebibyte" Wert definiert
+              # https://en.wikipedia.org/wiki/Byte#Multiple-byte_units
+              memory: 768Mi
+              # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#setting-requests-and-limits-for-local-ephemeral-storage
+              ephemeral-storage: 64Mi
+            # https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-resource-requests-and-limits
+            # Begrenzung der Ressourcen:   kubectl top pod
+            limits:
+              # CPU-Ressourcen werden in "millicores" definiert, z.B. "500m" oder "1"
+              # Beachte: Bei Hyper-Threading koennen in 1 CPU-Kern 2 verschiedene Threads bearbeitet werden
+              #          d.h. das Betriebssystem sieht scheinbar 2x so viele Kerne wie tatsaechlich vorhanden sind
+              cpu: 600m
+              #cpu: 200m
+              # Memory-Resources werden i.a. als "mebibyte" Wert definiert
+              memory: 768Mi
+              ephemeral-storage: 64Mi
+          # Ist der Container "alive" oder "dead" (= "failing")? Restart im Fehlerfall
+          # https://developers.redhat.com/blog/2020/11/10/you-probably-need-liveness-and-readiness-probes
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            # Anzahl Sekunden, bis die Probe fuer Liveness abgesetzt wird
+            initialDelaySeconds: 45
+            # default: 1 Sek.
+            timeoutSeconds: 15
+            # periodischer Abstand zwischen den Proben (default: 10 Sek.)
+            periodSeconds: 120
+            # max. Anzahl an Fehlversuchen (default: 3)
+            failureThreshold: 1
+            terminationGracePeriodSeconds: 5
+          # Ist der Container "ready", um Requests zu beantworten? Sind Nachbarsysteme, z.B. DB-Server, ebenfalls "ready"?
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            # Anzahl Sekunden, bis die Probe fuer Readiness abgesetzt wird
+            initialDelaySeconds: 45
+            # default: 1 Sek.
+            timeoutSeconds: 15
+            # periodischer Abstand zwischen den Proben (default: 10 Sek.)
+            periodSeconds: 120
+            # max. Anzahl an Fehlversuchen (default: 3)
+            failureThreshold: 1
+          volumeMounts:
+            - mountPath: /tmp
+              name: log-axa
+            - mountPath: /workspace/BOOT-INF/classes/private-key.pem
+              name: private-key-axa
+              readOnly: true
+            - mountPath: /workspace/BOOT-INF/classes/certificate.crt
+              name: certificate-axa
+              readOnly: true
+      serviceAccountName: axa
+      automountServiceAccountToken: false
+      volumes:
+        - name: log-axa
+          # https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+          hostPath:
+            path: /run/desktop/mnt/host/c/Zimmermann/volumes/axa
+            type: Directory
+          # https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
+          #emptyDir: {}
+        - name: private-key-axa
+          hostPath:
+            path: /run/desktop/mnt/host/c/Users/vieta/IdeaProjects/axa/axa/src/main/resources/private-key.pem
+            type: File
+        - name: certificate-axa
+          hostPath:
+            path: /run/desktop/mnt/host/c/Users/vieta/IdeaProjects/axa/axa/src/main/resources/certificate.crt
+            type: File
+
+---
+# https://kubernetes.io/docs/tasks/run-application/configure-pdb
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: axa
+  labels:
+    app: axa
+    app.kubernetes.io/name: axa
+    app.kubernetes.io/instance: axa
+    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/part-of: acme
+  namespace: acme
+spec:
+  # minAvailable: 1
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: axa
+      app.kubernetes.io/name: axa
+      app.kubernetes.io/instance: axa

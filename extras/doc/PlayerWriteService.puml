@@ -1,0 +1,47 @@
+@startuml
+
+skinparam  classAttributesIconSize 0
+
+package org.springframwork {
+   package stereotype {
+        interface Service
+    }
+
+    package transaction.annotation {
+        interface Transactional
+    }
+
+    package security.core.userdetails {
+        interface UserDetails
+    }
+}
+
+package util.java {
+    class UUID
+}
+
+package com.acme.axa {
+    package entity {
+        class Player << entity >>
+    }
+
+    package repository {
+        Interface PlayerRepository << control >> << @Repository >>
+    }
+
+    package service #DDDDDD {
+        class PlayerWriteService << control >> << @Service >> {
+        + create(player: Player): Player
+        + update(player: Player, id: UUID)
+        }
+    }
+
+    PlayerWriteService o--> "1" PlayerRepository: repo
+    PlayerWriteService .left.> Player
+    PlayerWriteService .right.> Service
+    PlayerWriteService .left> UUID
+    PlayerWriteService .down.> Transactional
+    PlayerWriteService .down.> UserDetails
+
+}
+@enduml

@@ -1,0 +1,43 @@
+@startuml ER Diagramm
+
+' hide the spot
+hide circle
+
+' evtl. Prbleme mit Kraehenfuessen vermeiden
+skinparam linetype ortho
+
+entity "Stats" {
+  * id : UUDI <<generated>>
+  --
+  * wins : int
+  * loss : int
+  * winrate : double
+  * lossrate : dobule
+  * hotstreak : boolean
+  * losesstreak : boolean
+}
+
+entity "Player" {
+  * id : UUID <<generated>>
+  --
+  * version : int
+  * playername : string
+  * email : string <<unique>>
+  * rank : enum
+    skins : string
+  * username : string
+  * **stats_id**: UUID <<FK>>
+  * created : timestamp
+  * updated : timestamp
+  }
+
+entity "Balances" {
+  * id : UUID <<generated>>
+  --
+  * credits : int
+  * points : int
+  * **player_id** : UUID <<FK>>
+  }
+Player ||.left.|| Stats
+Player ||.right.o{ Balances
+@enduml

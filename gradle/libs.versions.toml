@@ -1,0 +1,138 @@
+# Copyright (C) 2021 - present Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# https://docs.gradle.org/8.4/userguide/platforms.html#sub:central-declaration-of-dependencies
+# https://toml.io   TOML = Tom's Obvious Minimal Language   (Tom Preston-Werner)
+
+# table = Schluessel/Wert-Paare
+[versions]
+javaVersion = "22.0.1"
+
+springBoot = "3.3.0"
+springBootPlugin = "3.3.0"
+
+annotations = "24.1.0"
+# Passwort-Verschluesselung mit Argon2:
+bouncycastle = "1.78.1"
+jansi = "2.4.1"
+lombokMapstructBinding = "0.2.0"
+mapstruct = "1.6.0.Beta2"
+springdocOpenapi = "2.5.0"
+springAddonsStarterOidc = "7.8.1"
+
+# -----------------------------------------------------------------------------------------
+# B O M s   u n d   s p e z i f i s c h e   V e r s i o n e n   u e b e r s c h r e i b e n
+# -----------------------------------------------------------------------------------------
+# https://github.com/spring-projects/spring-boot/blob/main/spring-boot-project/spring-boot-dependencies/build.gradle
+allureBom = "2.27.0"
+#angusMail = "2.0.3"
+assertj = "3.26.0"
+#brave = "6.0.3"
+#crac = "1.4.0"
+flyway = "10.14.0"
+graphqlJava = "22.1"
+#graphqlJavaDataloader = "3.3.0"
+#h2 = "2.2.224"
+hibernate = "7.0.0.Alpha2"
+#hibernate = "6.6.0.Alpha1"
+#hibernate = "6.5.0.Final"
+# fuer annotationProcessor
+hibernateProcessor = "7.0.0.Alpha2"
+#hibernateJpamodelgen = "6.6.0.Alpha1"
+#hibernateJpamodelgen = "6.5.0.Final"
+#hibernateValidator = "8.0.1.Final"
+#hikaricp = "5.1.0"
+#jackson = "2.17.1"
+jakartaPersistence = "3.2.0"
+#jakartaPersistence = "3.1.0"
+jakartaValidation = "3.1.0"
+#jakartaValidation = "3.0.2"
+junitJupiter = "5.11.0-M2"
+log4j2 = "3.0.0-beta2"
+#logback = "1.5.6"
+# fuer annotationProcessor
+# https://projectlombok.org/download-edge
+#lombok = "edge-SNAPSHOT"
+lombok = "1.18.32"
+#micrometer = "1.13.0"
+#micrometerTracing = "1.3.0"
+mockito = "5.12.0"
+mockitoInline = "5.2.0"
+mysql = "8.4.0"
+# https://netty.io/news/2022/09/28/5-0-0-Alpha5.html von Sep. 2022
+#netty = "4.1.110.Final"
+oracleDatabase = "23.4.0.24.05"
+#postgresql = "42.7.3"
+prometheusMetrics = "1.3.1"
+#prometheusSimpleclient = "0.16.0"
+reactorBom = "2024.0.0-M2"
+slf4j = "2.1.0-alpha1"
+#snakeyaml = "2.2"
+#springData = "2024.0.0"
+springFramework = "6.2.0-M3"
+#springGraphQL = "1.3.0"
+#springHateoas = "2.3.0"
+#springSecurity = "6.3.0"
+# Spring Boot referenziert (nicht vorhanden bei Tomcat 11):
+# - org.apache.coyote.http11.AbstractHttp11JsseProtocol fuer TLS
+# - org.apache.coyote.http11.AbstractHttp11Protocol.setRejectIllegalHeader(boolean)
+#tomcat = "11.0.0-M20"
+#tomcat = "10.1.24"
+#zipkinReporter = "3.4.0"
+
+# ----------------------------------------------------------------------------------------
+# T e s t e n
+# ----------------------------------------------------------------------------------------
+junitPlatformSuite = "1.11.0-M2"
+
+# ----------------------------------------------------------------------------------------
+# C o d e a n a l y s e ,   R e p o r t s ,   D o k u m e n t a t i o n
+# ----------------------------------------------------------------------------------------
+allureJunit = "2.27.0"
+allureCommandline = "2.29.0"
+#asciidoctorj = "3.0.0-alpha.2"
+asciidoctorj = "2.5.12"
+asciidoctorjDiagram = "2.3.0"
+asciidoctorjPdf = "2.3.17"
+aspectjweaver = "1.9.9.1"
+checkstyle = "10.17.0"
+errorprone = "2.28.0"
+jruby = "9.4.6.0"
+jacoco = "0.8.12"
+modernizer = "2.9.0"
+spotbugs = "4.8.5"
+
+# ----------------------------------------------------------------------------------------
+# P l u g i n s
+# ----------------------------------------------------------------------------------------
+allurePlugin = "2.11.2"
+asciidoctor = "4.0.2"
+benManesVersions = "0.51.0"
+cyclonedx = "1.8.2"
+dependencyAnalysis = "1.20.0"
+errorpronePlugin = "4.0.0"
+forbiddenapis = "3.4"
+#graalvm = "0.10.2"
+licenseReport = "2.8"
+markelliotVersions = "0.43.0"
+modernizerPlugin = "1.9.2"
+nwillcVPlugin = "3.0.5"
+owaspDependencycheck = "9.2.0"
+snyk = "0.6.1"
+sonarqube = "5.0.0.4638"
+spotbugsPlugin = "6.0.15"
+spotless = "7.0.0.BETA1"
+sweeney = "4.6.17"
+testLogger = "4.0.0"

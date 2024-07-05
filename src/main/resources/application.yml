@@ -1,0 +1,358 @@
+# Copyright (C) 2016 - present Juergen Zimmermann, Hochschule Karlsruhe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---
+com.c4-soft.springaddons.oidc.ops:
+  - iss: http://localhost:8880/realms/spring
+    authorities:
+      # Pfad zu den Rollen innerhalb vom "JWT Claim" und zusaetzlicher Praefix "ROLE_" fuer Spring Security
+      - path: $.realm_access.roles
+        prefix: ROLE_
+
+server:
+  compression:
+    enabled: true
+    mime-types: application/hal+json
+    min-response-size: 2KB
+  error.whitelabel.enabled: false
+  # https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto.webserver.configure-ssl
+  http2.enabled: true
+  ssl.bundle: microservice
+  shutdown: graceful
+
+spring:
+  application.name: player
+  aop.proxy-target-class: false
+  # https://github.com/spring-projects/spring-framework/commit/55b3b28aecdb914224e009c7e53c0d11f0d9cd05
+  checkpoint.restore: onRefresh
+  # https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.data
+  datasource:
+    url: jdbc:postgresql://postgres/player
+    username: player
+    password: Change Me!
+  # https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.data-migration
+  flyway:
+    locations: classpath:db/migration/{vendor}
+    create-schemas: false
+  # https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.data
+  jpa:
+    #database-platform: POSTGRESQL
+    hibernate:
+      # https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#configurations-hbmddl
+      #ddl-auto: none
+      naming.physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+    open-in-view: false
+    properties:
+      # https://docs.jboss.org/hibernate/orm/current/javadocs/org/hibernate/cfg/AvailableSettings.html
+      # https://docs.jboss.org/hibernate/orm/current/javadocs/org/hibernate/cfg/Environment.html
+      hibernate:
+        #default_schema: player
+        jdbc:
+          time_zone: Europe/Berlin
+          batch_versioned_data: true
+          # fuer Oracle: der Treiber teilt bei SELECT das Resultat in standardmaessig maximal 10 Datensaetze auf
+          #fetch_size: 10
+        order_inserts: true
+        order_updates: true
+        session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 20
+        xml_mapping_enabled: false
+        #mapping.default_list_semantics: LIST
+      # https://stackoverflow.com/questions/31585698/spring-boot-jpa2-hibernate-enable-second-level-cache
+      # https://jakarta.ee/xml/ns/persistence
+      # https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd
+      jakarta.persistence:
+        sharedCache.mode: ENABLE_SELECTIVE
+        validation.mode: NONE
+        # Generierung eines SQL-Skripts mit CREATE TABLE im Wurzelverzeichnis
+        # https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#configurations-hbmddl
+        #schema-generation.scripts:
+        #  action: create
+        #  create-target: create.sql
+  # siehe org.springframework.boot.autoconfigure.jackson.JacksonProperties
+  jackson.default-property-inclusion: non_null
+  lifecycle.timeout-per-shutdown-phase: 3s
+  mail:
+    host: smtp.acme.com
+    port: 25
+    #protocol: smtp
+    properties.mail:
+      debug: false
+      smtp:
+        auth: false
+        starttls.enable: false
+    # Mailserver des IZ
+    #host: smtp.h-ka.de
+    #port: 23
+    #username: nnvv0011
+    #password: blabla
+    # GMail
+    #host: smtp.gmail.com
+    #port: 587
+    #properties.mail.smtp.starttls.enable: true
+  main.lazy-initialization: true
+  mvc.problemdetails.enabled: true
+  # fuer Images mit GraalVM Native
+  native.remove-unused-autoconfig: true
+  # https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html
+  security.oauth2.resourceserver.jwt:
+    issuer-uri: ${keycloak.issuer}
+    #jws-algorithms: RS256
+  spel.ignore: true
+  # https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.ssl.pem
+  # https://spring.io/blog/2023/06/07/securing-spring-boot-applications-with-ssl
+  ssl.bundle.pem.microservice:
+    # https://spring.io/blog/2023/11/07/ssl-hot-reload-in-spring-boot-3-2-0
+    reload-on-update: true
+    keystore:
+      private-key: "classpath:private-key.pem"
+      certificate: "classpath:certificate.crt"
+    truststore:
+      certificate: "classpath:certificate.crt"
+  threads.virtual.enabled: true
+
+management:
+  endpoints.web.exposure.include: "*"
+  #endpoint.shutdown.enabled: true
+  # Trace every action
+  metrics.distribution.percentiles-histogram.http.server.requests: true
+  observations:
+    #enable.spring.security: false
+    # siehe /actuator/metrics/get-by-id
+    key-values.application: player
+logging:
+  file:
+    name: /tmp/application.log
+  logback.rollingpolicy:
+    file-name-pattern: ${LOGFILE}.%d{yyyy-MM-dd}.%i.gz
+    max-file-size: 50MB
+    max-history: 7
+  pattern:
+    console: "%clr(%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5level) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %msg%n%wEx"
+    file: "%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5level ${PID:- } --- [%thread] %-40.40logger{39} : %m%n%wEx"
+    # https://github.com/micrometer-metrics/micrometer-samples/blob/main/micrometer-samples-boot3-web/src/main/resources/application.properties
+    # file: %5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  threshold:
+    console: info
+    file: info
+  level:
+    org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener: warn
+    org.springframework.security.core.userdetails.User: error
+    io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor: error
+
+# --------------------------------------------------------
+# E i g e n e   P r o p e r t i e s
+# --------------------------------------------------------
+app:
+  keycloak:
+    #client-id: ${keycloak.client-id}
+    client-secret: ${keycloak.client-secret}
+    #schema: http
+    #host: localhost
+    #port: 8880
+  #mail:
+  #  from: Theo Test <theo@test.de>
+  #  sales: Maxi Musterfrau <maxi.musterfrau@test.de>
+
+---
+# --------------------------------------------------------
+# K u b e r n e t e s
+# --------------------------------------------------------
+# alternativ: azure_app_service, sap, nomad, heroku
+# https://github.com/spring-projects/spring-boot/blob/main/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/cloud/CloudPlatform.java
+# https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/cloud/CloudPlatform.html
+spring.config.activate.on-cloud-platform: kubernetes
+management.endpoint.health:
+  enabled: true
+  probes.enabled: true
+  show-details: ALWAYS
+spring.lifecycle.timeout-per-shutdown-phase: 30s
+
+---
+# --------------------------------------------------------
+# P r o f i l e   " d e v "
+# --------------------------------------------------------
+spring:
+  config.activate.on-profile: dev
+  datasource:
+    # https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#appendix.application-properties.data
+    # https://github.com/brettwooldridge/HikariCP#frequently-used
+    # https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
+    # https://stackoverflow.com/questions/51136693/how-to-check-hikaricp-connection-pooling-is-working-or-not-in-java
+    hikari:
+      connection-timeout: 10000 # Default: 30_000 = 30 Sekunden
+      idle-timeout: 120000 # Default: 600_000 = 10 Minuten
+      maximum-pool-size: 3 # Default: 10
+      minimum-idle: 1 # Default: maximumPoolSize
+
+    # SWA: PostgreSQL, MySQL, Oracle
+    password: p
+    # SWA: H2
+    #password: ""
+
+    # SWA: PostgreSQL
+    # https://jdbc.postgresql.org/documentation/ssl
+    url: jdbc:postgresql://localhost/player?sslmode=verify-ca&sslrootcert=C:/Zimmermann/volumes/postgres/tls/certificate.crt
+    #url: jdbc:postgresql://localhost/player
+    # https://dev.mysql.com/doc/connector-j/8.1/en/connector-j-connp-props-security.html
+    # SWA: MySQL
+    #url: jdbc:mysql://localhost/player
+    # SWA: Oracle 23
+    #url: jdbc:oracle:thin:@localhost/FREEPDB1
+    # SWA: Oracle 21
+    #url: jdbc:oracle:thin:@localhost/XEPDB1
+    # SWA: Gradle mit H2
+    #url: jdbc:h2:mem:testdb
+    # SWA: Maven mit H2:
+    #url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+
+    # SWA: PostgreSQL, MySQL, Oracle
+    username: player
+    # SWA: H2
+    #username: sa
+
+  # https://spring.io/security/cve-2023-34035
+  #h2.console.enabled: true
+
+  flyway:
+    # SWA: PostgreSQL
+    # Tablespace fuer flyway_schema_history
+    # Flyway generiert bei MySQL "CREATE TABLE flyway_schema_history ..." nicht den Zusatz "ROW_FORMAT=COMPACT"
+    # Bei Oracle ist "CREATE TABLESPACE" sehr kompliziert https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/CREATE-TABLESPACE.html
+    tablespace: playerspace
+    # https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.data-migration
+    clean-disabled: false
+
+  devtools:
+    #livereload.enabled: true
+    restart:
+      #enabled: true
+      #poll-interval: 1s
+      #quiet-period: 400ms
+      trigger-file: .reloadtrigger
+  # https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.docker-compose
+  # https://stackoverflow.com/questions/76345884/how-to-select-specific-services-of-docker-compose-when-using-spring-boot-docker
+  # SWA: "gradle bootRun" mit Artifakt bzw. Modul "org.springframework.boot:spring-boot-docker-compose"
+  docker.compose.profiles.active: [postgres]
+  #docker.compose.profiles.active: [mysql]
+  #docker.compose.profiles.active: [oracle]
+  graphql:
+    # Pfad fuer GraphiQL: /graphiql
+    graphiql.enabled: true
+    # Pfad für Schema: /graphql/schema
+    schema.printer.enabled: true
+  #http.log-request-details: true
+  jackson.serialization.indent-output: true
+  # https://docs.jboss.org/hibernate/orm/current/javadocs/org/hibernate/cfg/AvailableSettings.html
+  # https://docs.jboss.org/hibernate/orm/current/javadocs/org/hibernate/cfg/Environment.html
+  jpa.properties.hibernate:
+    connection.pool_size: 10
+    # https://docs.jboss.org/hibernate/orm/current/introduction/html_single/Hibernate_Introduction.html#logging-generated-sql
+    format_sql: true
+    highlight_sql: true
+    # https://docs.jboss.org/hibernate/orm/current/javadocs/org/hibernate/tool/schema/internal/script/MultiLineSqlScriptExtractor.html
+    #hbm2ddl.import_files_sql_extractor: org.hibernate.tool.schema.internal.script.MultiLineSqlScriptExtractor
+    use_sql_comments: true
+    # Generierung eines SQL-Skripts mit CREATE TABLE im Wurzelverzeichnis
+    # https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#configurations-hbmddl
+    #jakarta.persistence.schema-generation.scripts:
+    #  action: create
+    #  create-target: create.sql
+  mail:
+    host: localhost
+    port: 5025
+  # https://stackoverflow.com/questions/53723613/how-to-set-enableloggingrequestdetails-true-in-spring-boot#answer-62817587
+  mvc.log-request-details: true
+  output.ansi.enabled: ALWAYS
+
+management:
+  endpoint:
+    health:
+      enabled: true
+      probes.enabled: true
+      show-details: ALWAYS
+    shutdown.enabled: true
+  info.os.enabled: true
+  # https://springbootlearning.medium.com/using-micrometer-to-trace-your-spring-boot-app-1fe6ff9982ae
+  tracing.sampling.probability: "1.0"
+
+  #server:
+  # SWA: auskommentieren, um TLS zu deaktivieren
+  #http2.enabled: false
+  #ssl.enabled: false
+  # SWA: Port 8081 statt 8080
+  #port: 8081
+
+logging:
+  file.name: /tmp/application.log
+  logback.rollingpolicy:
+    file-name-pattern: ${logging.file.name}.%d{yyyy-MM-dd}.%i.gz
+    max-file-size: 10MB
+    max-history: 3
+  pattern:
+    # %thread protokolliert den Thread-Namen: leer bei Virtual Threads
+    # https://stackoverflow.com/questions/61207226/logging-thread-id-instead-of-thread-name-using-logback
+    console: "%clr(%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5level) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %msg%n%wEx"
+    file: "%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5level ${PID:- } --- [%thread] %-40.40logger{39} : %m%n%wEx"
+  threshold:
+    console: trace
+    file: trace
+  level:
+    com.acme: trace
+    org.apache.catalina.authenticator.AuthenticatorBase: debug
+    org.apache.catalina.loader.WebappClassLoaderBase: info
+    org.springframework.boot.availability.ApplicationAvailabilityBean: debug
+    org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener: warn
+    # PersistenceUnit "default" fuer Jakarta Persistence
+    #org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean: debug
+    org.springframework.security.core.userdetails.User: error
+    org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider: debug
+    org.springframework.security.web.access.intercept.RequestMatcherDelegatingAuthorizationManager: debug
+    org.springframework.security.web.server.authorization.AuthorizationWebFilter: trace
+    org.springframework.security.web.FilterChainProxy: debug
+    #org.springframework.security.web.FilterChainProxy: trace
+    org.springframework.web.client.RestTemplate: debug
+    org.springframework.web.reactive.function.client.ExchangeFunctions: trace
+    org.springframework.web.service.invoker.PathVariableArgumentResolver: trace
+    org.springframework.web.service.invoker.RequestHeaderArgumentResolver: trace
+    org.springframework.web.servlet.DispatcherServlet: debug
+    org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor: debug
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: debug
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: error
+    io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor: error
+
+    # https://thorben-janssen.com/hibernate-logging-guide
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: debug
+    #org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.SQL_SLOW: warn
+    org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor: debug
+
+    io.qameta.allure.AllureLifecycle: fatal
+    org.junit.jupiter.engine.descriptor.TestInstanceLifecycleUtils: warn
+    org.springframework.boot.test.context.SpringBootTestContextBootstrapper: warn
+    org.springframework.test.context.support.AbstractContextLoader: warn
+    org.springframework.test.context.support.AnnotationConfigContextLoaderUtils: warn
+    org.springframework.test.context.support.DefaultTestContextBootstrapper: warn
+
+---
+# --------------------------------------------------------
+# P r o f i l e   " h t t p "
+# --------------------------------------------------------
+spring:
+  config.activate.on-profile: http
+
+server:
+  http2.enabled: false
+  ssl.enabled: false
